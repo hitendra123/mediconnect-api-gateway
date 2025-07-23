@@ -27,7 +27,7 @@ const Demo = () => {
   const [isValidating, setIsValidating] = useState(false);
 
   // API Configuration
-  const API_URL = 'https://localhost:7142'; // Update this to your API URL
+  const API_URL = 'https://mediconnect-api-ayftgpd5a9bdhzcu.canadacentral-01.azurewebsites.net'; // Update this to your API URL
   const DEMO_API_KEY = 'demo_key_12345';
 
   const sampleMessages = {
