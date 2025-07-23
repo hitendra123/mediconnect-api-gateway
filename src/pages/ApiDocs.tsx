@@ -13,7 +13,6 @@ import {
 } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import apiIntegrationImage from "@/assets/api-integration.jpg";
 
 const ApiDocs = () => {
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
@@ -297,14 +296,12 @@ curl -X POST https://api.mediconnect.io/convert \\
       
       {/* Hero Section */}
       <section className="py-16 bg-gradient-hero">
-        <div 
-          className="absolute inset-0 opacity-20"
-          style={{
-            backgroundImage: `url(${apiIntegrationImage})`,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-          }}
-        />
+        {/* Animated Background Elements */}
+        <div className="absolute inset-0 overflow-hidden">
+          <div className="absolute top-10 left-10 w-16 h-16 bg-white/10 rounded-full animate-pulse"></div>
+          <div className="absolute top-20 right-20 w-12 h-12 bg-white/5 rounded-full animate-bounce"></div>
+          <div className="absolute bottom-10 left-1/4 w-8 h-8 bg-white/10 rounded-full animate-pulse delay-1000"></div>
+        </div>
         <div className="relative max-w-6xl mx-auto px-4 text-center">
           <h1 className="text-5xl font-bold text-white mb-4">
             API Documentation

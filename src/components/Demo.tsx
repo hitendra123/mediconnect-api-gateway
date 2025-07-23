@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Play, CheckCircle, AlertCircle, Download, Eye, FileCheck } from "lucide-react";
+import { Loader2, Play, CheckCircle, AlertCircle, Download, Eye, FileCheck, Activity, Stethoscope, Heart } from "lucide-react";
 
 interface ValidationResult {
   isValid: boolean;
@@ -25,16 +25,18 @@ const Demo = () => {
   const [validation, setValidation] = useState<ValidationResult | null>(null);
   const [showJsonView, setShowJsonView] = useState(false);
   const [isValidating, setIsValidating] = useState(false);
+  const [conversionTime, setConversionTime] = useState<number | null>(null);
 
-  // API Configuration
-  const API_URL = 'https://mediconnect-api-ayftgpd5a9bdhzcu.canadacentral-01.azurewebsites.net'; // Update this to your API URL
+  // Updated API Configuration with the real URL
+  const API_URL = 'https://mediconnect-api-ayftgpd5a9bdhzcu.canadacentral-01.azurewebsites.net';
   const DEMO_API_KEY = 'demo_key_12345';
 
   const sampleMessages = {
     ADT: {
       name: "Patient Admission (ADT)",
       description: "Patient demographics and visit information",
-      color: "bg-blue-100 text-blue-800",
+      color: "bg-blue-100 text-blue-800 border-blue-200",
+      icon: "👤",
       data: `MSH|^~\\&|SENDING_APP|SENDING_FACILITY|RECEIVING_APP|RECEIVING_FACILITY|20231215120000||ADT^A01|12345|P|2.5|||AL|NE|
 EVN|A01|20231215120000|||
 PID|1||123456789|0123456|Doe^John^A||19800315|M||C|123 Main St^^Springfield^IL^62701||555-123-4567|||M|NON|123456789|
@@ -44,7 +46,8 @@ PV1|1|I|2000^2012^01||||123456^Smith^John^A|||SUR||||2|A0|`,
     ORU: {
       name: "Lab Results (ORU)",
       description: "Laboratory test results with observations",
-      color: "bg-green-100 text-green-800",
+      color: "bg-green-100 text-green-800 border-green-200",
+      icon: "🧪",
       data: `MSH|^~\\&|LAB_SYSTEM|LAB_FACILITY|EMR|HOSPITAL|20231215143000||ORU^R01|98765|P|2.5|||AL|NE|
 PID|1||987654321|0123456|Smith^Jane^M||19750522|F||C|456 Oak Ave^^Chicago^IL^60601||312-555-8901|||S|NON|987654321|
 OBR|1|12345|67890|80061^LIPID PANEL^CPT||20231215090000|20231215093000|||DR^Jones^Sarah|||20231215093000||||||20231215143000|||F|||
@@ -57,7 +60,8 @@ OBX|4|NM|2571-8^TRIGLYCERIDES^LOINC||150|mg/dL|<150|N|||F|||20231215143000|`,
     ORM: {
       name: "Lab Order (ORM)",
       description: "Service orders for labs, radiology, etc.",
-      color: "bg-blue-100 text-blue-800",
+      color: "bg-purple-100 text-purple-800 border-purple-200",
+      icon: "📋",
       data: `MSH|^~\\&|CPOE|HOSPITAL|LAB|LAB|20231215100000||ORM^O01|54321|P|2.5|||AL|NE|
 PID|1||135792468||Johnson^Robert^L||19650810|M||B|789 Pine St^^Boston^MA^02101||617-555-2345|||M|NON|135792468|
 ORC|NW|ORD-12345||||||20231215100000||DOC^Smith^Michael|||
@@ -67,7 +71,8 @@ OBR|1|ORD-12345||85025^COMPLETE BLOOD COUNT^CPT||20231215100000|||||||||DOC^Smit
     MDM: {
       name: "Medical Document (MDM)",
       description: "Clinical notes and documents",
-      color: "bg-green-100 text-green-800",
+      color: "bg-teal-100 text-teal-800 border-teal-200",
+      icon: "📄",
       data: `MSH|^~\\&|TRANSCRIPTION|HOSPITAL|EMR|HOSPITAL|20231215160000||MDM^T02|11111|P|2.3|||AL|NE|
 EVN|T02|20231215160000||||
 PID|1||246813579||Williams^Mary^E||19700225|F||W|321 Elm St^^Seattle^WA^98101||206-555-6789|||S|NON|246813579|
@@ -80,7 +85,8 @@ OBX|3|TX|11488-4^CONSULTATION NOTE^LOINC||Recommended OTC pain relief and follow
     RDE: {
       name: "Pharmacy Order (RDE)",
       description: "Medication prescriptions",
-      color: "bg-purple-100 text-purple-800",
+      color: "bg-orange-100 text-orange-800 border-orange-200",
+      icon: "💊",
       data: `MSH|^~\\&|PHARMACY|HOSPITAL|PHARMACY_SYSTEM|HOSPITAL|20231215140000||RDE^O11|77777|P|2.5|||AL|NE|
 PID|1||369258147||Anderson^Sarah^K||19820718|F||W|567 Maple Dr^^Portland^OR^97201||503-555-4321|||S|NON|369258147|
 ORC|NW|RX-88888||||||20231215140000||DOC^Wilson^Emily|||
@@ -89,36 +95,11 @@ TQ1|1||1|D|||||QAM^Every morning|
 RXR|^PO^ORAL|`,
       expectedResources: ["Patient", "MedicationRequest", "Medication", "Practitioner"]
     },
-    DFT: {
-      name: "Financial Transaction (DFT)",
-      description: "Billing and charges",
-      color: "bg-yellow-100 text-yellow-800",
-      data: `MSH|^~\\&|BILLING|HOSPITAL|FINANCIAL|HOSPITAL|20231215170000||DFT^P03|66666|P|2.5|||AL|NE|
-EVN|P03|20231215170000||||
-PID|1||741852963||Brown^Michael^J||19600405|M||B|890 Cedar Ln^^Denver^CO^80201||720-555-7890|||M|COM|741852963|
-FT1|1|FIN-12345|20231215||20231215|CG|99213^OFFICE VISIT LEVEL 3^CPT||||||150.00|||||RAD^Radiology Department|||E||123456^Johnson^Robert|||99213|ICD10|M79.3^MYALGIA|
-FT1|2|FIN-12346|20231215||20231215|CG|71020^CHEST X-RAY 2 VIEWS^CPT||||||250.00|||||RAD^Radiology Department|||E||123456^Johnson^Robert|||71020|ICD10|R06.02^SHORTNESS OF BREATH|
-IN1|1|BCBS001|BCBS^Blue Cross Blue Shield|Blue Cross Blue Shield||||||||||||DOE^JOHN||SELF|19800315|||||||||||||||||POL-123456789|`,
-      expectedResources: ["Patient", "ChargeItem", "Claim", "Account", "Coverage", "Organization"]
-    },
-    SIU: {
-      name: "Appointment Scheduling (SIU)",
-      description: "Appointment and resource scheduling",
-      color: "bg-indigo-100 text-indigo-800",
-      data: `MSH|^~\\&|SCHEDULING|HOSPITAL|APPOINTMENTS|HOSPITAL|20231215110000||SIU^S12|55555|P|2.5|||AL|NE|
-SCH|APPT-99999|APPT-99999||||NEW^New Appointment|ROUTINE^Routine Check-up||30|MIN^minutes|^^^^20231220090000^20231220093000|
-PID|1||159753486||Garcia^Maria^L||19900612|F||H|234 Park Ave^^Miami^FL^33101||305-555-1234|||S|NON|159753486|
-RGS|1|A|
-AIS|1|A||CHECKUP^Annual Physical Exam||||||||
-AIG|1|A||MD^Physician|DOC^Martinez^Carlos^J^^Dr.||||||
-AIL|1|A||CLINIC^Main Street Clinic^^^^^3^301^Main Building^3rd Floor Room 301||EXAM^Examination Room|
-NTE|1||Please arrive 15 minutes early for paperwork|`,
-      expectedResources: ["Patient", "Appointment", "Schedule", "Slot", "Practitioner", "Location", "HealthcareService"]
-    },
     EDI_837: {
       name: "EDI 837 Healthcare Claims",
       description: "Professional healthcare claims submission",
-      color: "bg-orange-100 text-orange-800",
+      color: "bg-indigo-100 text-indigo-800 border-indigo-200",
+      icon: "💰",
       data: `ISA*00*          *00*          *ZZ*SUBMITTER      *ZZ*RECEIVER       *241122*1430*^*00501*000000001*0*T*:~
 GS*HC*SENDER*RECEIVER*20241122*1430*1*X*005010X222A1~
 ST*837*0001*005010X222A1~
@@ -140,69 +121,6 @@ SE*18*0001~
 GE*1*1~
 IEA*1*000000001~`,
       expectedResources: ["Patient", "Organization", "Claim", "Practitioner"]
-    },
-    EDI_835: {
-      name: "EDI 835 Payment Advice",
-      description: "Healthcare claim payment and remittance advice",
-      color: "bg-orange-100 text-orange-800",
-      data: `ISA*00*          *00*          *ZZ*PAYER          *ZZ*PROVIDER       *241122*1430*^*00501*000000001*0*T*:~
-GS*HP*PAYER*PROVIDER*20241122*1430*1*X*005010X221A1~
-ST*835*0001*005010X221A1~
-BPR*I*1500.00*C*ACH*CCP*01*999999999*DA*123456789****20241122~
-TRN*1*12345*1234567890~
-CLP*CLAIM001*1*100.00*85.00**MC*CLAIM001*11~
-NM1*QC*1*DOE*JANE****MI*MEMBER123~
-SVC*HC:99213*75.00*70.00**1~
-CAS*CO*45*5.00~
-SVC*HC:99214*25.00*15.00**1~
-SE*12*0001~
-GE*1*1~
-IEA*1*000000001~`,
-      expectedResources: ["Patient", "PaymentNotice", "ExplanationOfBenefit", "Organization"]
-    },
-    EDI_270: {
-      name: "EDI 270 Eligibility Inquiry",
-      description: "Health plan eligibility and benefits inquiry",
-      color: "bg-purple-100 text-purple-800",
-      data: `ISA*00*          *00*          *ZZ*PROVIDER       *ZZ*PAYER          *241122*1430*^*00501*000000001*0*T*:~
-GS*HS*PROVIDER*PAYER*20241122*1430*1*X*005010X279A1~
-ST*270*0001*005010X279A1~
-BHT*0022*13*10001234*20241122*1430~
-HL*1**20*1~
-NM1*PR*2*ABC INSURANCE*****PI*12345~
-HL*2*1*21*1~
-NM1*1P*2*DEF MEDICAL CENTER*****XX*6789012345~
-HL*3*2*22*0~
-TRN*1*93175-012547*9877281234~
-NM1*IL*1*SMITH*ROBERT****MI*11122333301~
-DMG*D8*19630519*M~
-DTP*291*D8*20241122~
-EQ*30~
-SE*13*0001~
-GE*1*1~
-IEA*1*000000001~`,
-      expectedResources: ["Patient", "Coverage"]
-    },
-    EDI_271: {
-      name: "EDI 271 Eligibility Response",
-      description: "Health plan eligibility and benefits response",
-      color: "bg-purple-100 text-purple-800",
-      data: `ISA*00*          *00*          *ZZ*PAYER          *ZZ*PROVIDER       *241122*1430*^*00501*000000001*0*T*:~
-GS*HB*PAYER*PROVIDER*20241122*1430*1*X*005010X279A1~
-ST*271*0001*005010X279A1~
-BHT*0022*11*10001234*20241122*1430~
-TRN*2*93175-012547*9877281234~
-NM1*IL*1*SMITH*ROBERT****MI*11122333301~
-DMG*D8*19630519*M~
-INS*Y*18*021**A***FT~
-DTP*291*D8*20240101-20241231~
-EB*1**30~
-EB*A*IND*1***27*1000.00~
-EB*B*IND*1***27*20~
-SE*12*0001~
-GE*1*1~
-IEA*1*000000001~`,
-      expectedResources: ["Patient", "Coverage"]
     }
   };
 
@@ -242,6 +160,7 @@ IEA*1*000000001~`,
     setError(null);
     setValidation(null);
     setShowJsonView(false);
+    setConversionTime(null);
   };
 
   const convertData = async () => {
@@ -249,6 +168,7 @@ IEA*1*000000001~`,
     setError(null);
     setResult(null);
     setValidation(null);
+    setConversionTime(null);
 
     try {
       const startTime = Date.now();
@@ -269,16 +189,18 @@ IEA*1*000000001~`,
 
       const data = await response.json();
       const endTime = Date.now();
+      const processingTime = endTime - startTime;
+      setConversionTime(processingTime);
 
-      if (data.success) {
+      if (response.ok && data.success) {
         const fhirData = JSON.parse(data.convertedData);
         setResult(fhirData);
       } else {
-        setError(data.errorMessage || 'Conversion failed');
+        setError(data.errorMessage || `HTTP ${response.status}: ${response.statusText}`);
       }
     } catch (err) {
       console.error('Error:', err);
-      setError('Failed to connect to API. Make sure the API is running.');
+      setError(`Failed to connect to API: ${err.message}`);
     } finally {
       setIsConverting(false);
     }
@@ -452,11 +374,11 @@ IEA*1*000000001~`,
   const renderResourceCard = (resource: any) => {
     const getResourceIcon = (type: string) => {
       switch (type) {
-        case 'Patient': return '👤';
-        case 'Observation': return '📊';
-        case 'DiagnosticReport': return '📋';
-        case 'ServiceRequest': return '📝';
-        case 'DocumentReference': return '📄';
+        case 'Patient': return <Heart className="w-5 h-5 text-red-500" />;
+        case 'Observation': return <Activity className="w-5 h-5 text-blue-500" />;
+        case 'DiagnosticReport': return <FileCheck className="w-5 h-5 text-green-500" />;
+        case 'ServiceRequest': return <Stethoscope className="w-5 h-5 text-purple-500" />;
+        case 'DocumentReference': return <FileCheck className="w-5 h-5 text-orange-500" />;
         case 'MedicationRequest': return '💊';
         case 'Appointment': return '📅';
         case 'Claim': return '💰';
@@ -464,21 +386,23 @@ IEA*1*000000001~`,
         case 'Practitioner': return '👨‍⚕️';
         case 'Coverage': return '🛡️';
         case 'Encounter': return '🏥';
-        default: return '📄';
+        default: return <FileCheck className="w-5 h-5 text-gray-500" />;
       }
     };
 
     return (
-      <div key={resource.id || Math.random()} className="bg-gradient-to-r from-medical-light to-medical-glow border border-medical-accent rounded-lg p-4 shadow-sm">
-        <div className="flex items-start justify-between mb-3">
-          <div className="flex items-center gap-2">
-            <span className="text-lg">{getResourceIcon(resource.resourceType)}</span>
+      <div key={resource.id || Math.random()} className="bg-white border border-medical-blue/20 rounded-xl p-6 shadow-medical hover:shadow-lg transition-all duration-300">
+        <div className="flex items-start justify-between mb-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-gradient-medical rounded-lg text-white">
+              {getResourceIcon(resource.resourceType)}
+            </div>
             <div>
               <h4 className="text-lg font-semibold text-foreground">{resource.resourceType}</h4>
               <p className="text-sm text-muted-foreground">ID: {resource.id || 'Generated'}</p>
             </div>
           </div>
-          <Badge variant="secondary" className="text-xs">
+          <Badge variant="secondary" className="text-xs bg-medical-light text-medical-blue border-medical-blue/20">
             FHIR R4
           </Badge>
         </div>
@@ -488,17 +412,17 @@ IEA*1*000000001~`,
           <div className="space-y-2">
             {resource.name?.[0] && (
               <p className="text-sm">
-                <span className="font-medium">Name:</span> {resource.name[0].given?.join(' ')} {resource.name[0].family}
+                <span className="font-medium text-medical-blue">Name:</span> {resource.name[0].given?.join(' ')} {resource.name[0].family}
               </p>
             )}
             {resource.gender && (
               <p className="text-sm">
-                <span className="font-medium">Gender:</span> {resource.gender}
+                <span className="font-medium text-medical-blue">Gender:</span> {resource.gender}
               </p>
             )}
             {resource.birthDate && (
               <p className="text-sm">
-                <span className="font-medium">Birth Date:</span> {resource.birthDate}
+                <span className="font-medium text-medical-blue">Birth Date:</span> {resource.birthDate}
               </p>
             )}
           </div>
@@ -508,12 +432,12 @@ IEA*1*000000001~`,
           <div className="space-y-2">
             {resource.code?.coding?.[0] && (
               <p className="text-sm">
-                <span className="font-medium">Test:</span> {resource.code.coding[0].display || resource.code.coding[0].code}
+                <span className="font-medium text-medical-blue">Test:</span> {resource.code.coding[0].display || resource.code.coding[0].code}
               </p>
             )}
             {resource.valueQuantity && (
               <p className="text-sm">
-                <span className="font-medium">Value:</span> {resource.valueQuantity.value} {resource.valueQuantity.unit}
+                <span className="font-medium text-medical-blue">Value:</span> {resource.valueQuantity.value} {resource.valueQuantity.unit}
               </p>
             )}
             {resource.status && (
@@ -540,13 +464,13 @@ IEA*1*000000001~`,
     };
 
     return (
-      <div className="mt-6 p-4 border rounded-lg bg-background">
-        <div className="flex items-center gap-2 mb-3">
-          <FileCheck className="w-5 h-5 text-primary" />
+      <div className="mt-6 p-6 border border-medical-blue/20 rounded-xl bg-gradient-to-r from-medical-light to-white">
+        <div className="flex items-center gap-2 mb-4">
+          <FileCheck className="w-5 h-5 text-medical-blue" />
           <h4 className="font-semibold text-foreground">FHIR Validation Results</h4>
         </div>
         
-        <div className={`p-3 rounded-lg border ${validation.isValid ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
+        <div className={`p-4 rounded-lg border ${validation.isValid ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
           <div className="flex items-center gap-2 mb-2">
             {validation.isValid ? (
               <CheckCircle className="w-4 h-4 text-green-600" />
@@ -563,7 +487,7 @@ IEA*1*000000001~`,
           <div className="mt-4 space-y-2">
             <h5 className="font-medium text-foreground">Issues Found:</h5>
             {validation.issues.map((issue, index) => (
-              <div key={index} className={`p-2 rounded border text-sm ${getSeverityColor(issue.severity)}`}>
+              <div key={index} className={`p-3 rounded-lg border text-sm ${getSeverityColor(issue.severity)}`}>
                 <div className="font-medium">{issue.location}</div>
                 <div>{issue.details}</div>
               </div>
@@ -575,43 +499,53 @@ IEA*1*000000001~`,
   };
 
   return (
-    <section id="demo" className="py-20 bg-medical-light">
-      <div className="max-w-6xl mx-auto px-4">
+    <section id="demo" className="py-20 bg-gradient-to-br from-medical-light via-white to-medical-light">
+      <div className="max-w-7xl mx-auto px-4">
         <div className="text-center mb-12">
-          <h3 className="text-4xl font-bold text-foreground mb-4">
-            Try the API Live
-          </h3>
-          <p className="text-xl text-muted-foreground">
-            Convert healthcare data formats in real-time
+          <div className="flex items-center justify-center gap-3 mb-4">
+            <div className="p-3 bg-gradient-medical rounded-full">
+              <Activity className="w-8 h-8 text-white" />
+            </div>
+            <h3 className="text-4xl font-bold text-foreground">
+              Live API Demo
+            </h3>
+          </div>
+          <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
+            Experience real-time healthcare data conversion with our production API
           </p>
         </div>
 
-        <Card className="shadow-medical">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Play className="w-5 h-5" />
-              Interactive Demo
+        <Card className="shadow-medical border-medical-blue/20 bg-white/80 backdrop-blur-sm">
+          <CardHeader className="bg-gradient-to-r from-medical-blue to-medical-teal text-white rounded-t-lg">
+            <CardTitle className="flex items-center gap-3 text-xl">
+              <Play className="w-6 h-6" />
+              Interactive Healthcare Data Converter
             </CardTitle>
-            <p className="text-muted-foreground">
-              Select a message type and see the conversion in action
+            <p className="text-white/90 mt-2">
+              Convert HL7 and EDI messages to FHIR format using our production API
             </p>
           </CardHeader>
-          <CardContent className="space-y-6">
+          <CardContent className="space-y-8 p-8">
             {/* Message Type Selector */}
             <div>
-              <label className="block text-sm font-medium text-foreground mb-3">
-                Select Message Type
+              <label className="block text-sm font-semibold text-foreground mb-4">
+                Select Healthcare Message Type
               </label>
-              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
                 {Object.entries(sampleMessages).map(([key, message]) => (
                   <Button
                     key={key}
                     variant={selectedMessage === key ? "default" : "outline"}
-                    className="h-auto p-3 flex flex-col items-start text-left"
+                    className={`h-auto p-4 flex flex-col items-center text-center transition-all duration-300 ${
+                      selectedMessage === key 
+                        ? 'bg-gradient-medical text-white shadow-medical' 
+                        : 'hover:shadow-card hover:scale-105'
+                    }`}
                     onClick={() => loadSampleMessage(key)}
                   >
+                    <span className="text-2xl mb-2">{message.icon}</span>
                     <span className="font-medium text-xs">{key.replace('_', ' ')}</span>
-                    <span className="text-xs opacity-80">
+                    <span className="text-xs opacity-80 mt-1">
                       {message.name.split('(')[0].trim()}
                     </span>
                   </Button>
@@ -619,89 +553,116 @@ IEA*1*000000001~`,
               </div>
               
               {selectedMessage && (
-                <div className="mt-3 p-3 bg-muted rounded-lg">
-                  <div className="flex items-center gap-2 mb-1">
-                    <Badge className={sampleMessages[selectedMessage].color}>
+                <div className="mt-6 p-6 bg-gradient-to-r from-white to-medical-light rounded-xl border border-medical-blue/20">
+                  <div className="flex items-center gap-3 mb-3">
+                    <span className="text-2xl">{sampleMessages[selectedMessage].icon}</span>
+                    <Badge className={`${sampleMessages[selectedMessage].color} border`}>
                       {sampleMessages[selectedMessage].name}
                     </Badge>
                   </div>
-                  <p className="text-sm text-muted-foreground mb-2">
+                  <p className="text-sm text-muted-foreground mb-3">
                     {sampleMessages[selectedMessage].description}
                   </p>
-                  <p className="text-xs text-muted-foreground">
-                    <span className="font-medium">Expected FHIR Resources:</span>{' '}
-                    {sampleMessages[selectedMessage].expectedResources.join(', ')}
-                  </p>
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <span className="font-medium">Expected FHIR Resources:</span>
+                    <div className="flex flex-wrap gap-1">
+                      {sampleMessages[selectedMessage].expectedResources.map((resource, i) => (
+                        <Badge key={i} variant="outline" className="text-xs">
+                          {resource}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
                 </div>
               )}
             </div>
 
             {/* Input Area */}
             <div>
-              <label className="block text-sm font-medium text-foreground mb-2">
-                Input Message
+              <label className="block text-sm font-semibold text-foreground mb-3">
+                Healthcare Message Input
               </label>
               <Textarea
                 value={hl7Input}
                 onChange={(e) => setHL7Input(e.target.value)}
-                className="font-mono text-sm min-h-[200px]"
+                className="font-mono text-sm min-h-[250px] border-medical-blue/20 focus:border-medical-blue focus:ring-medical-blue/20"
                 placeholder="Paste your HL7 or EDI message here, or select a sample above..."
               />
             </div>
 
             {/* Convert Button */}
-            <Button
-              onClick={convertData}
-              disabled={!hl7Input || isConverting}
-              className="w-full"
-              size="lg"
-            >
-              {isConverting ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Converting...
-                </>
-              ) : (
-                "Convert to FHIR"
+            <div className="flex items-center gap-4">
+              <Button
+                onClick={convertData}
+                disabled={!hl7Input || isConverting}
+                className="bg-gradient-medical hover:shadow-medical hover:scale-105 transition-all duration-300 px-8 py-3"
+                size="lg"
+              >
+                {isConverting ? (
+                  <>
+                    <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                    Converting...
+                  </>
+                ) : (
+                  <>
+                    <Activity className="w-5 h-5 mr-2" />
+                    Convert to FHIR
+                  </>
+                )}
+              </Button>
+              
+              {conversionTime && (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <CheckCircle className="w-4 h-4 text-success" />
+                  <span>Processed in {conversionTime}ms</span>
+                </div>
               )}
-            </Button>
+            </div>
 
             {/* Results */}
             {result && (
-              <div className="mt-6">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-2">
-                    <CheckCircle className="w-5 h-5 text-success" />
-                    <label className="text-sm font-medium text-foreground">
-                      FHIR Bundle Output
-                    </label>
+              <div className="mt-8">
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center gap-3">
+                    <CheckCircle className="w-6 h-6 text-success" />
+                    <div>
+                      <h4 className="text-lg font-semibold text-foreground">
+                        FHIR Bundle Generated Successfully
+                      </h4>
+                      <p className="text-sm text-muted-foreground">
+                        {result.entry?.length || 0} FHIR resources created
+                      </p>
+                    </div>
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex gap-3">
                     <Button
                       onClick={validateFhir}
                       disabled={isValidating}
                       variant="outline"
                       size="sm"
+                      className="border-medical-blue text-medical-blue hover:bg-medical-light"
                     >
                       {isValidating ? (
                         <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                       ) : (
                         <FileCheck className="w-4 h-4 mr-2" />
                       )}
-                      Validate
+                      Validate FHIR
                     </Button>
                     <Button
                       onClick={downloadFhir}
                       variant="outline"
                       size="sm"
+                      className="border-medical-teal text-medical-teal hover:bg-medical-light"
                     >
                       <Download className="w-4 h-4 mr-2" />
-                      Download
+                      Download JSON
                     </Button>
                     <Button
                       onClick={() => setShowJsonView(!showJsonView)}
                       variant="outline"
                       size="sm"
+                      className="border-medical-blue text-medical-blue hover:bg-medical-light"
                     >
                       <Eye className="w-4 h-4 mr-2" />
                       {showJsonView ? 'Card View' : 'JSON View'}
@@ -710,24 +671,31 @@ IEA*1*000000001~`,
                 </div>
 
                 {showJsonView ? (
-                  <div className="bg-slate-900 text-green-400 p-4 rounded-lg overflow-x-auto">
-                    <pre className="text-sm font-mono">
+                  <div className="bg-slate-900 text-green-400 p-6 rounded-xl overflow-x-auto border border-medical-blue/20">
+                    <pre className="text-sm font-mono leading-relaxed">
                       {JSON.stringify(result, null, 2)}
                     </pre>
                   </div>
                 ) : (
-                  <div className="space-y-4">
+                  <div className="space-y-6">
                     {/* Bundle Header */}
-                    <div className="bg-background border border-border rounded-lg p-4">
+                    <div className="bg-gradient-to-r from-medical-light to-white border border-medical-blue/20 rounded-xl p-6">
                       <div className="flex items-center justify-between">
-                        <div>
-                          <h4 className="text-lg font-semibold text-foreground">FHIR Bundle</h4>
-                          <p className="text-sm text-muted-foreground">
-                            Created: {new Date(result.timestamp).toLocaleString()}
-                          </p>
+                        <div className="flex items-center gap-3">
+                          <div className="p-3 bg-gradient-medical rounded-lg">
+                            <FileCheck className="w-6 h-6 text-white" />
+                          </div>
+                          <div>
+                            <h4 className="text-xl font-semibold text-foreground">FHIR Bundle</h4>
+                            <p className="text-sm text-muted-foreground">
+                              Created: {new Date(result.timestamp).toLocaleString()}
+                            </p>
+                          </div>
                         </div>
                         <div className="text-right">
-                          <Badge variant="secondary">{result.type || 'collection'}</Badge>
+                          <Badge variant="secondary" className="bg-medical-light text-medical-blue border-medical-blue/20">
+                            {result.type || 'collection'}
+                          </Badge>
                           <p className="text-xs text-muted-foreground mt-1">
                             {result.entry?.length || 0} resources
                           </p>
@@ -736,9 +704,11 @@ IEA*1*000000001~`,
                     </div>
 
                     {/* Resource Cards */}
-                    {result.entry?.map((entry: any, index: number) => 
-                      entry.resource ? renderResourceCard(entry.resource) : null
-                    )}
+                    <div className="grid md:grid-cols-2 gap-6">
+                      {result.entry?.map((entry: any, index: number) => 
+                        entry.resource ? renderResourceCard(entry.resource) : null
+                      )}
+                    </div>
                   </div>
                 )}
 
@@ -749,12 +719,21 @@ IEA*1*000000001~`,
 
             {/* Error */}
             {error && (
-              <div className="mt-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-                <div className="flex items-center gap-2">
-                  <AlertCircle className="w-5 h-5 text-red-600" />
-                  <span className="text-red-800 font-medium">Conversion Error</span>
+              <div className="mt-8 p-6 bg-red-50 border border-red-200 rounded-xl">
+                <div className="flex items-center gap-3 mb-3">
+                  <AlertCircle className="w-6 h-6 text-red-600" />
+                  <span className="text-red-800 font-semibold text-lg">Conversion Error</span>
                 </div>
-                <p className="text-red-700 mt-1">{error}</p>
+                <p className="text-red-700 mb-4">{error}</p>
+                <div className="text-sm text-red-600 bg-red-100 p-3 rounded-lg">
+                  <strong>Troubleshooting Tips:</strong>
+                  <ul className="list-disc list-inside mt-2 space-y-1">
+                    <li>Ensure your message follows the correct HL7 or EDI format</li>
+                    <li>Check that all required segments are present</li>
+                    <li>Verify field separators and encoding characters</li>
+                    <li>Try one of the sample messages to test the API connection</li>
+                  </ul>
+                </div>
               </div>
             )}
           </CardContent>

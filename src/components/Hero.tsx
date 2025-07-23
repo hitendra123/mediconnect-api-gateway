@@ -1,18 +1,16 @@
 import { Button } from "@/components/ui/button";
-import heroImage from "@/assets/hero-medical.jpg";
+import { Activity, Zap, Shield } from "lucide-react";
 
 const Hero = () => {
   return (
     <section className="relative py-20 px-4 bg-gradient-hero overflow-hidden">
-      {/* Background Image */}
-      <div 
-        className="absolute inset-0 opacity-20"
-        style={{
-          backgroundImage: `url(${heroImage})`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-        }}
-      />
+      {/* Animated Background Elements */}
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute top-20 left-10 w-20 h-20 bg-white/10 rounded-full animate-pulse"></div>
+        <div className="absolute top-40 right-20 w-16 h-16 bg-white/5 rounded-full animate-bounce"></div>
+        <div className="absolute bottom-20 left-1/4 w-12 h-12 bg-white/10 rounded-full animate-pulse delay-1000"></div>
+        <div className="absolute bottom-40 right-1/3 w-8 h-8 bg-white/5 rounded-full animate-bounce delay-500"></div>
+      </div>
       
       {/* Gradient Overlay */}
       <div className="absolute inset-0 bg-gradient-hero opacity-90" />
@@ -52,14 +50,29 @@ const Hero = () => {
           {/* Stats */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto">
             <div className="text-center animate-fade-in" style={{ animationDelay: '0.2s' }}>
+              <div className="flex items-center justify-center mb-3">
+                <div className="p-3 bg-white/20 rounded-full">
+                  <Shield className="w-6 h-6 text-white" />
+                </div>
+              </div>
               <div className="text-3xl font-bold text-white mb-2">99.9%</div>
               <div className="text-white/80">Uptime SLA</div>
             </div>
             <div className="text-center animate-fade-in" style={{ animationDelay: '0.3s' }}>
+              <div className="flex items-center justify-center mb-3">
+                <div className="p-3 bg-white/20 rounded-full">
+                  <Zap className="w-6 h-6 text-white" />
+                </div>
+              </div>
               <div className="text-3xl font-bold text-white mb-2">&lt;100ms</div>
               <div className="text-white/80">Average Response</div>
             </div>
             <div className="text-center animate-fade-in" style={{ animationDelay: '0.4s' }}>
+              <div className="flex items-center justify-center mb-3">
+                <div className="p-3 bg-white/20 rounded-full">
+                  <Activity className="w-6 h-6 text-white" />
+                </div>
+              </div>
               <div className="text-3xl font-bold text-white mb-2">10+</div>
               <div className="text-white/80">Message Types</div>
             </div>
