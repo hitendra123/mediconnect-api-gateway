@@ -121,6 +121,133 @@ SE*18*0001~
 GE*1*1~
 IEA*1*000000001~`,
       expectedResources: ["Patient", "Organization", "Claim", "Practitioner"]
+    },
+    DFT: {
+      name: "Detailed Financial Transaction (DFT)",
+      description: "Financial and billing information for healthcare services",
+      color: "bg-emerald-100 text-emerald-800 border-emerald-200",
+      icon: "💳",
+      data: `MSH|^~\\&|BILLING|HOSPITAL|FINANCE|HOSPITAL|20231215170000||DFT^P03|99999|P|2.5|||AL|NE|
+EVN|P03|20231215170000||||
+PID|1||159753486||Brown^Michael^J||19881205|M||AA|890 Cedar Ln^^Miami^FL^33101||305-555-7890|||M|NON|159753486|
+PV1|1|O|OUTPT||||DOC^Taylor^Amanda|||CARDIO||||3|A0|
+FT1|1||20231215170000|20231215170000|CG|99213^OFFICE VISIT ESTABLISHED PATIENT^CPT|Office Visit Level 3|1|150.00||||||DOC^Taylor^Amanda|CARDIO|
+FT1|2||20231215170000|20231215170000|CG|93000^ELECTROCARDIOGRAM^CPT|EKG 12-Lead|1|75.00||||||DOC^Taylor^Amanda|CARDIO|
+DG1|1|I10|I25.10^ATHEROSCLEROTIC HEART DISEASE^ICD10||20231215170000|||W|`,
+      expectedResources: ["Patient", "Encounter", "ChargeItem", "Invoice", "Practitioner"]
+    },
+    SIU: {
+      name: "Scheduling Information Unsolicited (SIU)",
+      description: "Appointment scheduling and calendar management",
+      color: "bg-cyan-100 text-cyan-800 border-cyan-200",
+      icon: "📅",
+      data: `MSH|^~\\&|SCHEDULING|HOSPITAL|EMR|HOSPITAL|20231215180000||SIU^S12|88888|P|2.5|||AL|NE|
+SCH|12345|67890|||||20231220100000|20231220103000|30|MIN|BOOKED||||||DOC^Wilson^Patricia|||ROUTINE|
+TQ1|1||||||20231220100000|20231220103000|R|
+PID|1||753951486||Davis^Jennifer^L||19920415|F||W|456 Birch Ave^^Denver^CO^80201||303-555-3456|||S|NON|753951486|
+PV1|1|O|CLINIC^ROOM5^01||||DOC^Wilson^Patricia|||DERM||||1|A0|
+RGS|1|A|
+AIG|1|A|DOC^Wilson^Patricia|P|20231220100000|30|MIN|
+AIL|1|A|CLINIC^ROOM5^01|L|20231220100000|30|MIN|
+AIP|1|A|753951486|PAT|20231220100000|30|MIN|`,
+      expectedResources: ["Patient", "Appointment", "Practitioner", "Location", "Schedule"]
+    },
+    EDI_835: {
+      name: "EDI 835 Payment & Remittance",
+      description: "Healthcare claim payment and remittance advice",
+      color: "bg-violet-100 text-violet-800 border-violet-200",
+      icon: "💵",
+      data: `ISA*00*          *00*          *ZZ*PAYER          *ZZ*PROVIDER       *241122*1430*^*00501*000000001*0*T*:~
+GS*HP*PAYER*PROVIDER*20241122*1430*1*X*005010X221A1~
+ST*835*0001*005010X221A1~
+BPR*I*1500.00*C*ACH*CCP*01*999999999*DA*123456789****20241122~
+TRN*1*12345*1234567890~
+DTM*405*20241122~
+N1*PR*BLUE CROSS BLUE SHIELD*XX*87654321~
+N3*PO BOX 12345~
+N4*ANYTOWN*ST*12345*US~
+N1*PE*PROVIDER CLINIC*XX*1234567890~
+N3*123 MAIN ST~
+N4*ANYTOWN*ST*12345*US~
+LX*1~
+CLP*CLAIM001*1*100.00*85.00**MC*CLAIM001*11~
+NM1*QC*1*DOE*JANE****MI*MEMBER123~
+NM1*82*1*PROVIDER*JOHN****XX*1234567890~
+DTM*232*20241120~
+DTM*233*20241120~
+SVC*HC:99213*75.00*70.00**1~
+DTM*472*20241120~
+CAS*CO*45*5.00~
+REF*6R*LINE001~
+SVC*HC:99214*25.00*15.00**1~
+DTM*472*20241120~
+CAS*CO*45*10.00~
+REF*6R*LINE002~
+PLB*1234567890*20241122*CV:REFUND*-50.00~
+SE*25*0001~
+GE*1*1~
+IEA*1*000000001~`,
+      expectedResources: ["Patient", "PaymentNotice", "ExplanationOfBenefit", "Organization", "PaymentReconciliation"]
+    },
+    EDI_270: {
+      name: "EDI 270 Eligibility Inquiry",
+      description: "Healthcare eligibility, coverage, or benefits inquiry",
+      color: "bg-rose-100 text-rose-800 border-rose-200",
+      icon: "🔍",
+      data: `ISA*00*          *00*          *ZZ*SUBMITTER      *ZZ*RECEIVER       *241122*1430*^*00501*000000001*0*T*:~
+GS*HS*SENDER*RECEIVER*20241122*1430*1*X*005010X279A1~
+ST*270*0001*005010X279A1~
+BHT*0022*13*10001234*20241122*1430~
+HL*1**20*1~
+NM1*PR*2*BLUE CROSS BLUE SHIELD*****PI*87654321~
+HL*2*1*21*1~
+NM1*1P*1*PROVIDER*JOHN****XX*1234567890~
+PRV*PE*PXC*207Q00000X~
+HL*3*2*22*0~
+TRN*1*93175-012547*9877281234~
+NM1*IL*1*DOE*JANE****MI*MEMBER123~
+DMG*D8*19800315*F~
+DTP*291*D8*20241122~
+EQ*30~
+SE*14*0001~
+GE*1*1~
+IEA*1*000000001~`,
+      expectedResources: ["Patient", "Coverage", "CoverageEligibilityRequest", "Organization", "Practitioner"]
+    },
+    EDI_271: {
+      name: "EDI 271 Eligibility Response",
+      description: "Healthcare eligibility, coverage, or benefits response",
+      color: "bg-amber-100 text-amber-800 border-amber-200",
+      icon: "✅",
+      data: `ISA*00*          *00*          *ZZ*RECEIVER       *ZZ*SUBMITTER      *241122*1430*^*00501*000000001*0*T*:~
+GS*HB*RECEIVER*SUBMITTER*20241122*1430*1*X*005010X279A1~
+ST*271*0001*005010X279A1~
+BHT*0022*11*10001234*20241122*1430~
+HL*1**20*1~
+NM1*PR*2*BLUE CROSS BLUE SHIELD*****PI*87654321~
+HL*2*1*21*1~
+NM1*1P*1*PROVIDER*JOHN****XX*1234567890~
+HL*3*2*22*0~
+TRN*2*93175-012547*9877281234~
+NM1*IL*1*DOE*JANE****MI*MEMBER123~
+REF*SY*MEMBER123~
+N3*456 ELM ST~
+N4*ANYTOWN*ST*12345*US~
+DMG*D8*19800315*F~
+INS*Y*18*001*25*A***FT~
+DTP*346*D8*20240101~
+DTP*347*D8*20241231~
+EB*1*FAM*30**27~
+EB*B*FAM*30**27*2500.00~
+EB*C*FAM*30**27*500.00~
+EB*F*FAM*30**27*20~
+EB*G*IND*30**27*1000.00~
+EB*A*IND*30**27*5000.00~
+MSG*MEMBER IS ELIGIBLE FOR COVERED SERVICES~
+SE*22*0001~
+GE*1*1~
+IEA*1*000000001~`,
+      expectedResources: ["Patient", "Coverage", "CoverageEligibilityResponse", "Organization", "InsurancePlan"]
     }
   };
 
@@ -386,6 +513,17 @@ IEA*1*000000001~`,
         case 'Practitioner': return '👨‍⚕️';
         case 'Coverage': return '🛡️';
         case 'Encounter': return '🏥';
+        case 'ChargeItem': return '💳';
+        case 'Invoice': return '🧾';
+        case 'Appointment': return '📅';
+        case 'Location': return '📍';
+        case 'Schedule': return '🗓️';
+        case 'PaymentNotice': return '💵';
+        case 'ExplanationOfBenefit': return '📋';
+        case 'PaymentReconciliation': return '💰';
+        case 'CoverageEligibilityRequest': return '🔍';
+        case 'CoverageEligibilityResponse': return '✅';
+        case 'InsurancePlan': return '🛡️';
         default: return <FileCheck className="w-5 h-5 text-gray-500" />;
       }
     };
@@ -424,6 +562,46 @@ IEA*1*000000001~`,
               <p className="text-sm">
                 <span className="font-medium text-medical-blue">Birth Date:</span> {resource.birthDate}
               </p>
+            )}
+          </div>
+        )}
+
+        {resource.resourceType === 'Appointment' && (
+          <div className="space-y-2">
+            {resource.start && (
+              <p className="text-sm">
+                <span className="font-medium text-medical-blue">Start:</span> {new Date(resource.start).toLocaleString()}
+              </p>
+            )}
+            {resource.end && (
+              <p className="text-sm">
+                <span className="font-medium text-medical-blue">End:</span> {new Date(resource.end).toLocaleString()}
+              </p>
+            )}
+            {resource.status && (
+              <Badge variant={resource.status === 'booked' ? 'default' : 'secondary'} className="text-xs">
+                {resource.status}
+              </Badge>
+            )}
+          </div>
+        )}
+
+        {resource.resourceType === 'ChargeItem' && (
+          <div className="space-y-2">
+            {resource.code?.coding?.[0] && (
+              <p className="text-sm">
+                <span className="font-medium text-medical-blue">Service:</span> {resource.code.coding[0].display || resource.code.coding[0].code}
+              </p>
+            )}
+            {resource.quantity && (
+              <p className="text-sm">
+                <span className="font-medium text-medical-blue">Quantity:</span> {resource.quantity.value}
+              </p>
+            )}
+            {resource.status && (
+              <Badge variant={resource.status === 'billable' ? 'default' : 'secondary'} className="text-xs">
+                {resource.status}
+              </Badge>
             )}
           </div>
         )}
